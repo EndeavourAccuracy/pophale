@@ -5,6 +5,7 @@ MAIN SCREEN
 d                                    Start the level in MicroEmulator.
 e (and F2)                           Go to the executable screen.
 f (and Alt + Enter/Return/Space)     Toggle fullscreen mode.
+h                                    Hide front tiles.
 q (and ESC)                          Quit the application.
 s                                    Save the level.
 t                                    Go to the texts screen.
@@ -18,3 +19,5 @@ Shift + left mouse button            Re-use the last used back tile.
 F1 (and ?)                           Go to the help screen.
 INS                                  Go to the front tiles screen.
 DEL                                  [if used twice] Remove front tile.
+Arrows                               Select tile.
+Shift + arrows                       'Drag'.

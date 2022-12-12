@@ -9,11 +9,11 @@
 
 ===[1 - ABOUT]=================================================================
 
-pophale v0.9b (June 2018)
-Copyright (C) 2018 Norbert de Jonge <mail@norbertdejonge.nl>
+pophale v1.0 (December 2022)
+Copyright (C) 2018-2022 Norbert de Jonge <nlmdejonge@gmail.com>
 
 A level editor of Prince of Persia: Harem Adventures.
-The pophale website can be found at [ https://www.norbertdejonge.nl/pophale/ ].
+The pophale website can be found at [ https://github.com/EndeavourAccuracy/pophale ].
 
 The game is a MIDlet for the Java ME (J2ME/phoneME) environment.
 Supported is the 176x208 version without Nokia UI API.
@@ -48,12 +48,12 @@ NOTE: Removal happens in two steps. First, the nearest tile is marked. Then, if 
 
 ===[4 - FEEDBACK]==============================================================
 
-If pophale crashes, gets compilation errors or crashes while building, send an e-mail to [ mail@norbertdejonge.nl ]. Make sure to describe exactly what actions triggered the bug and the precise symptoms of the bug. If possible, also include: 'uname -a', 'gcc -v', 'sdl2-config --version', and 'pophale --version'.
+If pophale crashes, gets compilation errors or crashes while building, send an e-mail to [ nlmdejonge@gmail.com ]. Make sure to describe exactly what actions triggered the bug and the precise symptoms of the bug. If possible, also include: 'uname -a', 'gcc -v', 'sdl2-config --version', and 'pophale --version'.
 
 ===[5 - DID YOU CREATE NEW LEVELS?]============================================
 
 Feel free to share your work:
-http://forum.princed.org/
+https://forum.princed.org/
 
 ===[6 - (RE)COMPILING]=========================================================
 
@@ -75,9 +75,9 @@ The following instructions are to compile 32-bit.
 
 1.1 Download
 
-http://sourceforge.net/projects/orwelldevcpp/files/Setup%20Releases/
+https://sourceforge.net/projects/orwelldevcpp/files/Setup%20Releases/
 or
-http://downloads.sourceforge.net/project/orwelldevcpp/Setup%20Releases/
+https://downloads.sourceforge.net/project/orwelldevcpp/Setup%20Releases/
   Dev-Cpp%205.11%20TDM-GCC%204.9.2%20Setup.exe
 
 1.2 Install
@@ -88,11 +88,11 @@ Simply run the executable.
 
 2.1 Download
 
-http://libsdl.org/release/
+https://libsdl.org/release/
   SDL2-devel-2.0.7-mingw.tar.gz
-http://libsdl.org/projects/SDL_ttf/release/
+https://libsdl.org/projects/SDL_ttf/release/
   SDL2_ttf-devel-2.0.14-mingw.tar.gz
-http://libsdl.org/projects/SDL_image/release/
+https://libsdl.org/projects/SDL_image/release/
   SDL2_image-devel-2.0.2-mingw.tar.gz
 
 2.2 Install
@@ -155,6 +155,7 @@ Go to: File->New->Project...
 Basic->Console Application
 C Project
 Name: pophale
+Save pophale.dev to the pophale directory.
 
 Go to: Project->Remove From Project...
 Select main.c and press Delete.
@@ -178,11 +179,11 @@ In the Linker field, add:
 -l"zip.dll"
 
 Go to: Project->Project Options...->Directories
+Select the tab: Library Directories
+Add: C:\Program Files (x86)\Dev-Cpp\MinGW64\i686-w64-mingw32\lib
 Select the tab: Include Directories
 Add: C:\Program Files (x86)\Dev-Cpp\MinGW64\i686-w64-mingw32\include\SDL2
 Add: C:\Program Files (x86)\Dev-Cpp\MinGW64\i686-w64-mingw32\include
-Select the tab: Library Directories
-Add: C:\Program Files (x86)\Dev-Cpp\MinGW64\i686-w64-mingw32\lib
 
 Go to: Tools->Compiler Options...->Directories
 Select the tab: Binaries

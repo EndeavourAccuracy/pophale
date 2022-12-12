@@ -1,5 +1,6 @@
-/* pophale v0.9b (June 2018)
- * Copyright (C) 2018 Norbert de Jonge <mail@norbertdejonge.nl>
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* pophale v1.0 (December 2022)
+ * Copyright (C) 2018-2022 Norbert de Jonge <nlmdejonge@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -55,8 +56,8 @@
 #define EXIT_NORMAL 0
 #define EXIT_ERROR 1
 #define EDITOR_NAME "pophale"
-#define EDITOR_VERSION "v0.9b (June 2018)"
-#define COPYRIGHT "Copyright (C) 2018 Norbert de Jonge"
+#define EDITOR_VERSION "v1.0 (December 2022)"
+#define COPYRIGHT "Copyright (C) 2022 Norbert de Jonge"
 #define WINDOW_WIDTH 712
 #define WINDOW_HEIGHT 682
 #define DIR_JAR "jar"
@@ -231,6 +232,7 @@ int iChangeBack;
 int iChangeFront;
 int iCFX, iCFY;
 int iOKOn;
+int iHideFront;
 
 /*** front ***/
 int iFront0101;
@@ -351,6 +353,7 @@ SDL_Texture *imgemulator;
 SDL_Texture *imgdelete;
 SDL_Texture *imgstatusbarsprite;
 SDL_Texture *imgpopup;
+SDL_Texture *imgchkb;
 
 struct sample {
 	Uint8 *data;
@@ -375,6 +378,7 @@ unsigned long BytesAsLU (unsigned char *sData, int iBytes);
 void LevelLoad (int iLevel);
 void InitScreenAction (char *sAction);
 void InitScreen (void);
+void ShowFrontTiles (void);
 void ShowScreen (void);
 void Quit (void);
 void LoadFonts (void);
@@ -440,6 +444,7 @@ void CreateMeta (char *sFile);
 void VerifyVersion (void);
 void InitPopUp (void);
 void ShowPopUp (void);
+void UpdateHover (void);
 
 /*****************************************************************************/
 int main (int argc, char *argv[])
@@ -463,6 +468,7 @@ int main (int argc, char *argv[])
 	iChanged = 0;
 	iDelX = -1;
 	iDelY = -1;
+	iHideFront = 0;
 
 	if (argc > 1)
 	{
@@ -859,6 +865,14 @@ void LevelLoad (int iLevel)
 	/*** prince ***/
 	ulPrinceX = ReadFromFile (iFd, "", 2, sData);
 	ulPrinceY = ReadFromFile (iFd, "", 2, sData);
+
+	/*** Hover starts more or less where the prince is. ***/
+	iHoverRow = round (ulPrinceY / 24) + 1;
+	if (iHoverRow > (int)ulHeight) { iHoverRow = (int)ulHeight; }
+	if (iHoverRow < 1) { iHoverRow = 1; }
+	iHoverColumn = round (ulPrinceX / 16) + 1;
+	if (iHoverColumn > (int)ulWidth) { iHoverColumn = (int)ulWidth; }
+	if (iHoverColumn < 1) { iHoverColumn = 1; }
 
 	/*** exit trigger ***/
 	ulExitTriggerX = ReadFromFile (iFd, "", 2, sData);
@@ -1332,7 +1346,7 @@ void InitScreen (void)
 
 	iPreLoaded = 0;
 	iCurrentBarHeight = 0;
-	iNrToPreLoad = 132; /*** Value can be obtained via debug mode. ***/
+	iNrToPreLoad = 133; /*** Value can be obtained via debug mode. ***/
 	SDL_SetCursor (curWait);
 
 	/*** back ***/
@@ -1453,6 +1467,7 @@ void InitScreen (void)
 	PreLoad (PNG_VARIOUS, "delete.png", &imgdelete);
 	PreLoad (PNG_VARIOUS, "statusbar_sprite.png", &imgstatusbarsprite);
 	PreLoad (PNG_VARIOUS, "popup.png", &imgpopup);
+	PreLoad (PNG_VARIOUS, "chk_black.png", &imgchkb);
 
 	/*** front ***/
 	PreLoad (PNG_FRONT, "torch_sprite.png", &imgtorchsprite);
@@ -1501,9 +1516,7 @@ void InitScreen (void)
 					switch (event.cbutton.button)
 					{
 						case SDL_CONTROLLER_BUTTON_A:
-							if ((iDraggingMoved == 0) &&
-								(iHoverRow != 0) && (iHoverColumn != 0))
-								{ ChangeBack(); }
+							if (iDraggingMoved == 0) { ChangeBack(); }
 							break;
 						case SDL_CONTROLLER_BUTTON_B: Quit(); break;
 						case SDL_CONTROLLER_BUTTON_X: Text(); break;
@@ -1514,16 +1527,20 @@ void InitScreen (void)
 						case SDL_CONTROLLER_BUTTON_LEFTSHOULDER: PrevLevel(); break;
 						case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER: NextLevel(); break;
 						case SDL_CONTROLLER_BUTTON_DPAD_LEFT:
-							/*** TODO: move active back marker ***/
+							/*** move active back marker ***/
+							if (iHoverColumn > 1) { iHoverColumn--; }
 							break;
 						case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
-							/*** TODO: move active back marker ***/
+							/*** move active back marker ***/
+							if (iHoverColumn < (int)ulWidth) { iHoverColumn++; }
 							break;
 						case SDL_CONTROLLER_BUTTON_DPAD_UP:
-							/*** TODO: move active back marker ***/
+							/*** move active back marker ***/
+							if (iHoverRow > 1) { iHoverRow--; }
 							break;
 						case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
-							/*** TODO: move active back marker ***/
+							/*** move active back marker ***/
+							if (iHoverRow < (int)ulHeight) { iHoverRow++; }
 							break;
 					}
 					ShowScreen();
@@ -1537,7 +1554,8 @@ void InitScreen (void)
 					{
 						if ((SDL_GetTicks() - joyleft) > 300)
 						{
-							/*** TODO: 'drag' ***/
+							/*** 'drag' ***/
+							iXPosDragOffset+=100;
 							joyleft = SDL_GetTicks();
 						}
 					}
@@ -1545,7 +1563,8 @@ void InitScreen (void)
 					{
 						if ((SDL_GetTicks() - joyright) > 300)
 						{
-							/*** TODO: 'drag' ***/
+							/*** 'drag' ***/
+							iXPosDragOffset-=100;
 							joyright = SDL_GetTicks();
 						}
 					}
@@ -1553,7 +1572,8 @@ void InitScreen (void)
 					{
 						if ((SDL_GetTicks() - joyup) > 300)
 						{
-							/*** TODO: 'drag' ***/
+							/*** 'drag' ***/
+							iYPosDragOffset+=100;
 							joyup = SDL_GetTicks();
 						}
 					}
@@ -1561,7 +1581,8 @@ void InitScreen (void)
 					{
 						if ((SDL_GetTicks() - joydown) > 300)
 						{
-							/*** TODO: 'drag' ***/
+							/*** 'drag' ***/
+							iYPosDragOffset-=100;
 							joydown = SDL_GetTicks();
 						}
 					}
@@ -1583,7 +1604,7 @@ void InitScreen (void)
 					}
 					ShowScreen();
 					break;
-				case SDL_KEYDOWN: /*** http://wiki.libsdl.org/SDL_Keycode ***/
+				case SDL_KEYDOWN: /*** https://wiki.libsdl.org/SDL2/SDL_Keycode ***/
 					switch (event.key.keysym.sym)
 					{
 						case SDLK_MINUS:
@@ -1611,9 +1632,7 @@ void InitScreen (void)
 							{
 								Zoom (1);
 							} else {
-								if ((iDraggingMap == 0) &&
-									(iHoverRow != 0) && (iHoverColumn != 0))
-									{ ChangeBack(); }
+								if (iDraggingMap == 0) { ChangeBack(); }
 							}
 							break;
 						case SDLK_f: Zoom (1); break;
@@ -1643,22 +1662,57 @@ void InitScreen (void)
 							EXE();
 							break;
 						case SDLK_INSERT:
-							if ((iDraggingMoved == 0) &&
-								(iHoverRow != 0) && (iHoverColumn != 0))
-								{ ChangeFront(); }
+							if (iDraggingMoved == 0) { ChangeFront(); }
 							break;
 						case SDLK_DELETE: InitScreenAction ("del"); break;
 						case SDLK_LEFT:
-							/*** TODO: move active back marker ***/
+							if ((event.key.keysym.mod & KMOD_LSHIFT) ||
+								(event.key.keysym.mod & KMOD_RSHIFT))
+							{
+								/*** 'drag' ***/
+								iXPosDragOffset+=100;
+							} else {
+								/*** move active back marker ***/
+								if (iHoverColumn > 1) { iHoverColumn--; }
+							}
 							break;
 						case SDLK_RIGHT:
-							/*** TODO: move active back marker ***/
+							if ((event.key.keysym.mod & KMOD_LSHIFT) ||
+								(event.key.keysym.mod & KMOD_RSHIFT))
+							{
+								/*** 'drag' ***/
+								iXPosDragOffset-=100;
+							} else {
+								/*** move active back marker ***/
+								if (iHoverColumn < (int)ulWidth) { iHoverColumn++; }
+							}
 							break;
 						case SDLK_UP:
-							/*** TODO: move active back marker ***/
+							if ((event.key.keysym.mod & KMOD_LSHIFT) ||
+								(event.key.keysym.mod & KMOD_RSHIFT))
+							{
+								/*** 'drag' ***/
+								iYPosDragOffset+=100;
+							} else {
+								/*** move active back marker ***/
+								if (iHoverRow > 1) { iHoverRow--; }
+							}
 							break;
 						case SDLK_DOWN:
-							/*** TODO: move active back marker ***/
+							if ((event.key.keysym.mod & KMOD_LSHIFT) ||
+								(event.key.keysym.mod & KMOD_RSHIFT))
+							{
+								/*** 'drag' ***/
+								iYPosDragOffset-=100;
+							} else {
+								/*** move active back marker ***/
+								if (iHoverRow < (int)ulHeight) { iHoverRow++; }
+							}
+							break;
+						case SDLK_h:
+							if (iHideFront == 0)
+								{ iHideFront = 1; } else { iHideFront = 0; }
+							PlaySound ("wav/check_box.wav");
 							break;
 					}
 					ShowScreen();
@@ -1669,6 +1723,7 @@ void InitScreen (void)
 					iXPos = event.motion.x;
 					iYPos = event.motion.y;
 					if ((iOldXPos == iXPos) && (iOldYPos == iYPos)) { break; }
+					UpdateHover();
 
 					/*** Emulator information. ***/
 					if (InArea (660, 2, 660 + 25, 2 + 25) == 1)
@@ -1773,8 +1828,7 @@ void InitScreen (void)
 						if (InArea (MAP_LEFT, MAP_TOP, MAP_LEFT + MAP_WIDTH,
 							MAP_TOP + MAP_HEIGHT) == 1) /*** map ***/
 						{
-							if ((iDraggingMoved == 0) &&
-								(iHoverRow != 0) && (iHoverColumn != 0))
+							if (iDraggingMoved == 0)
 							{
 								keystate = SDL_GetKeyboardState (NULL);
 								if ((keystate[SDL_SCANCODE_LSHIFT]) ||
@@ -1787,6 +1841,12 @@ void InitScreen (void)
 									ChangeBack();
 								}
 							}
+						}
+						if (InArea (108, 7, 108 + 14, 7 + 14) == 1) /*** hide front t. ***/
+						{
+							if (iHideFront == 0)
+								{ iHideFront = 1; } else { iHideFront = 0; }
+							PlaySound ("wav/check_box.wav");
 						}
 					}
 					if (event.button.button == 2) /*** middle mouse button ***/
@@ -1802,9 +1862,7 @@ void InitScreen (void)
 						if (InArea (MAP_LEFT, MAP_TOP, MAP_LEFT + MAP_WIDTH,
 							MAP_TOP + MAP_HEIGHT) == 1) /*** map ***/
 						{
-							if ((iDraggingMoved == 0) &&
-								(iHoverRow != 0) && (iHoverColumn != 0))
-								{ ChangeFront(); }
+							if (iDraggingMoved == 0) { ChangeFront(); }
 						}
 					}
 
@@ -1836,46 +1894,11 @@ void InitScreen (void)
 	}
 }
 /*****************************************************************************/
-void ShowScreen (void)
+void ShowFrontTiles (void)
 /*****************************************************************************/
 {
-	int iX, iY;
-	int iXFull, iYFull;
-
 	/*** Used for looping. ***/
-	int iRowLoop, iColumnLoop;
 	int iLoop;
-
-	/*** black ***/
-	ShowImage (imgblack, 0, 0, "imgblack", ascreen, iScale, 1);
-
-	/*** back ***/
-	iY = 0;
-	iHoverRow = 0;
-	iHoverColumn = 0;
-	for (iRowLoop = 1; iRowLoop <= (int)ulHeight; iRowLoop++)
-	{
-		iX = 0;
-		for (iColumnLoop = 1; iColumnLoop <= (int)ulWidth; iColumnLoop++)
-		{
-			iXFull = MapStartX() + (iX * iZoom);
-			iYFull = MapStartY() + (iY * iZoom);
-			ShowImage (imgback[ulBack[iRowLoop][iColumnLoop]],
-				iXFull,
-				iYFull,
-				"imgback[]", ascreen, iZoom, 0);
-			if ((iXPos >= iXFull) && (iXPos < (iXFull + (16 * iZoom))) &&
-				(iYPos >= iYFull) && (iYPos < (iYFull + (24 * iZoom))))
-			{
-				ShowImage (imghoverbacks, iXFull, iYFull,
-					"imghoverbacks", ascreen, iZoom, 0);
-				iHoverRow = iRowLoop;
-				iHoverColumn = iColumnLoop;
-			}
-			iX+=16;
-		}
-		iY+=24;
-	}
 
 	/*** entrance image ***/
 	ShowImage (imgentrance,
@@ -2043,7 +2066,7 @@ void ShowScreen (void)
 		}
 	}
 
-	/*** front ***/
+	/*** (blue) front ***/
 	for (iLoop = 1; iLoop <= (int)ulNrFront; iLoop++)
 	{
 		switch (ulFrontTypeNr[ulFrontType[iLoop] + 1])
@@ -2097,6 +2120,44 @@ void ShowScreen (void)
 				break;
 		}
 	}
+}
+/*****************************************************************************/
+void ShowScreen (void)
+/*****************************************************************************/
+{
+	int iX, iY;
+	int iXFull, iYFull;
+
+	/*** Used for looping. ***/
+	int iRowLoop, iColumnLoop;
+
+	/*** black ***/
+	ShowImage (imgblack, 0, 0, "imgblack", ascreen, iScale, 1);
+
+	/*** back ***/
+	iY = 0;
+	for (iRowLoop = 1; iRowLoop <= (int)ulHeight; iRowLoop++)
+	{
+		iX = 0;
+		for (iColumnLoop = 1; iColumnLoop <= (int)ulWidth; iColumnLoop++)
+		{
+			iXFull = MapStartX() + (iX * iZoom);
+			iYFull = MapStartY() + (iY * iZoom);
+			ShowImage (imgback[ulBack[iRowLoop][iColumnLoop]],
+				iXFull,
+				iYFull,
+				"imgback[]", ascreen, iZoom, 0);
+			if ((iHoverRow == iRowLoop) && (iHoverColumn == iColumnLoop))
+			{
+				ShowImage (imghoverbacks, iXFull, iYFull,
+					"imghoverbacks", ascreen, iZoom, 0);
+			}
+			iX+=16;
+		}
+		iY+=24;
+	}
+
+	if (iHideFront == 0) { ShowFrontTiles(); }
 
 	/*** delete ***/
 	if ((iDelX != -1) && (iDelY != -1))
@@ -2108,6 +2169,8 @@ void ShowScreen (void)
 
 	/*** interface ***/
 	ShowImage (imginterface, 0, 0, "imginterface", ascreen, iScale, 1);
+	if (iHideFront == 1)
+		{ ShowImage (imgchkb, 108, 7, "imgchkb", ascreen, iScale, 1); }
 
 	/*** prev level ***/
 	if (iCurLevel != 0)
@@ -2611,7 +2674,7 @@ void Help (void)
 				case SDL_MOUSEMOTION:
 					iXPos = event.motion.x;
 					iYPos = event.motion.y;
-					if (InArea (90, 567, 622, 590) == 1)
+					if (InArea (92, 572, 92 + 528, 572 + 19) == 1)
 					{
 						SDL_SetCursor (curHand);
 					} else {
@@ -2632,8 +2695,8 @@ void Help (void)
 					{
 						if (InArea (610, 633, 610 + 85, 633 + 32) == 1) /*** OK ***/
 							{ iHelp = 0; }
-						if (InArea (90, 567, 622, 590) == 1)
-							{ OpenURL ("https://www.norbertdejonge.nl/pophale/"); }
+						if (InArea (92, 572, 92 + 528, 572 + 19) == 1)
+							{ OpenURL ("https://github.com/EndeavourAccuracy/pophale"); }
 					}
 					ShowHelp();
 					break;
@@ -3754,7 +3817,11 @@ void CenterNumber (int iNumber, int iX, int iY,
 	} else {
 		snprintf (arText[0], MAX_TEXT, "%02x", iNumber);
 	}
-	message = TTF_RenderText_Blended_Wrapped (font[20], arText[0], fore, 0);
+	/* The 100000 is a workaround for 0 being broken. SDL devs have fixed that
+	 * see e.g. https://hg.libsdl.org/SDL_ttf/rev/72b8861dbc01 but
+	 * Ubuntu et al. still ship older sdl2-ttf versions.
+	 */
+	message = TTF_RenderText_Blended_Wrapped (font[20], arText[0], fore, 100000);
 	messaget = SDL_CreateTextureFromSurface (ascreen, message);
 	if (iHex == 0)
 	{
@@ -5360,5 +5427,34 @@ void ShowPopUp (void)
 
 	/*** refresh screen ***/
 	SDL_RenderPresent (ascreen);
+}
+/*****************************************************************************/
+void UpdateHover (void)
+/*****************************************************************************/
+{
+	int iX, iY;
+	int iXFull, iYFull;
+
+	/*** Used for looping. ***/
+	int iRowLoop, iColumnLoop;
+
+	iY = 0;
+	for (iRowLoop = 1; iRowLoop <= (int)ulHeight; iRowLoop++)
+	{
+		iX = 0;
+		for (iColumnLoop = 1; iColumnLoop <= (int)ulWidth; iColumnLoop++)
+		{
+			iXFull = MapStartX() + (iX * iZoom);
+			iYFull = MapStartY() + (iY * iZoom);
+			if ((iXPos >= iXFull) && (iXPos < (iXFull + (16 * iZoom))) &&
+				(iYPos >= iYFull) && (iYPos < (iYFull + (24 * iZoom))))
+			{
+				iHoverRow = iRowLoop;
+				iHoverColumn = iColumnLoop;
+			}
+			iX+=16;
+		}
+		iY+=24;
+	}
 }
 /*****************************************************************************/

@@ -1,3 +1,10 @@
+v1.0 (December 12, 2022) - Norbert de Jonge
+--------------------
++ Checkbox to hide front tiles.
++ Allowing selection and 'dragging' with (Shift +) arrows.
+* There's now always a back tile selected, to allow for faster switching between mouse and keyboard.
+* Minor improvements.
+
 v0.9b (June 2, 2018) - Norbert de Jonge
 --------------------
 + Initial release.
