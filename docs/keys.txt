@@ -1,0 +1,20 @@
+---------------------------------------------------------------------------
+MAIN SCREEN
+---------------------------------------------------------------------------
+1-7                                  Change zoom level
+d                                    Start the level in MicroEmulator.
+e (and F2)                           Go to the executable screen.
+f (and Alt + Enter/Return/Space)     Toggle fullscreen mode.
+q (and ESC)                          Quit the application.
+s                                    Save the level.
+t                                    Go to the texts screen.
+z                                    Change the interface size.
+Enter (and Return and Space)         Go to the back tiles screen.
+Shift + left mouse button            Re-use the last used back tile.
+- (and _)                            Go to the previous level.
++ (and =)                            Go to the next level.
+/                                    Clear the entire level.
+'                                    Re-use the last used back tile.
+F1 (and ?)                           Go to the help screen.
+INS                                  Go to the front tiles screen.
+DEL                                  [if used twice] Remove front tile.

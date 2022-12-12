@@ -1,0 +1,11 @@
+# Executables.
+/pophale
+/pophale.exe
+
+# Created by IDE's.
+/pophale.dev
+/pophale.ico
+/pophale.layout
+/pophale.o
+/*private*
+/Makefile.win
